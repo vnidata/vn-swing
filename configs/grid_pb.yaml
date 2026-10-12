@@ -1,0 +1,20 @@
+mode: pb
+description: "Lưới tham số cho chiến lược Pullback trong xu hướng tăng (192 tổ hợp)"
+
+axes:
+  n_in: [10, 15, 20]          # Cửa sổ EMA hồi quy
+  n_out: [20, 50]             # Cửa sổ SMA thoát lệnh
+  m: [0, 100]                 # SMA xu hướng VN-Index (0 = tắt)
+  vm: [0.0, 1.5]              # Bội số khối lượng so với SMA20(V) (0 = tắt)
+  k: [2.0, 3.0]               # Hệ số trailing stop ATR
+  clv: [0.0, 0.65]            # Vị trí đóng cửa trong phiên (Close Location Value) (0 = tắt)
+  rs: [0.0, 0.5]              # Phân vị Relative Strength RS126 (0 = tắt)
+
+fast_axes:
+  n_in: [10, 20]
+  n_out: [20, 50]
+  m: [0, 100]
+  vm: [0.0, 1.5]
+  k: [3.0, 99.0]
+  clv: [0.0, 0.65]
+  rs: [0.0, 0.5]

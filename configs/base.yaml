@@ -1,0 +1,33 @@
+market:
+  exchange: HOSE
+  price_limit: 0.07
+  lot: 100
+  min_hold_sessions: 3
+  timezone: Asia/Ho_Chi_Minh
+
+costs:
+  buy_cost: 0.0030
+  sell_cost: 0.0040
+  sensitivity: [1.0, 1.5, 2.0]
+
+execution:
+  ato_fill_prob: 1.0          # giữ 1.0 ở bản gốc; chạy độ nhạy 0.8, 0.6
+  delist_haircut: 0.5         # chiết khấu thanh lý khi hủy niêm yết/đình chỉ
+
+universe:
+  min_adtv_vnd: 1.0e10        # GTGD trung vị 60 phiên >= 10 tỷ VND
+  adtv_frac_cap: 0.03         # lệnh tối đa 3% ADTV 60 phiên
+
+portfolio:
+  init_cash: 1.0e9            # vốn ban đầu 1 tỷ VND
+  risk_pct: 0.01              # rủi ro 1% vốn / vị thế
+  max_positions: 10           # tối đa 10 vị thế
+  max_weight: 0.15            # tối đa 15% vốn / mã
+  rf_annual: 0.05             # lãi suất phi rủi ro 5%/năm
+
+research:
+  train_years: 3
+  test_years: 1
+  holdout_start: "2025-01-01" # Khóa cứng holdout
+  min_trades_train: 20
+  seed: 42

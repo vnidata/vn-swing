@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V-DBO Quant Terminal | Tín Hiệu Swing HOSE</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              900: '#064e3b',
+            },
+            dark: {
+              bg: '#0b0f19',
+              card: '#111827',
+              border: '#1f2937',
+              hover: '#1e293b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-dark-border bg-dark-card/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-bold tracking-tight text-white">V-DBO Quant Terminal</h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold tracking-wide uppercase">HOSE Swing</span>
+          </div>
+          <p class="text-xs text-slate-400">Vietnam Donchian Breakout & Pullback Engine</p>
+        </div>
+      </div>
+
+      <!-- STATUS & REFRESH -->
+      <div class="flex items-center space-x-4">
+        <div class="hidden sm:flex items-center space-x-2 text-xs text-slate-400 bg-dark-bg px-3 py-1.5 rounded-lg border border-dark-border">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Đồng bộ sau: <strong id="countdown-text" class="mono text-white">15:00</strong></span>
+        </div>
+        <button id="btn-refresh" onclick="fetchSignalsData(true)" class="flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="refresh-icon"></i>
+          <span>Làm mới</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI SUMMARY CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- CARD 1: MARKET REGIME -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Xu Hướng Thị Trường (Regime)</span>
+          <span id="badge-regime" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 BẬT</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-2">
+          <span id="kpi-vnindex" class="text-2xl font-bold mono text-white">1,266.8</span>
+          <span class="text-xs text-slate-400">VN-Index</span>
+        </div>
+        <p id="kpi-regime-desc" class="text-xs text-emerald-400 mt-1 flex items-center space-x-1">
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 inline"></i>
+          <span>Trên SMA100 (+4.7 điểm)</span>
+        </p>
+      </div>
+
+      <!-- CARD 2: RISK & KILL SWITCH -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Quản Trị Rủi Ro (Kill-Switch)</span>
+          <span id="badge-killswitch" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">BÌNH THƯỜNG</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-2">
+          <span id="kpi-drawdown" class="text-2xl font-bold mono text-emerald-400">0.00%</span>
+          <span class="text-xs text-slate-400">Max DD</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Ngưỡng: Cấp 1 (-15%), Cấp 2 (-25%)</p>
+      </div>
+
+      <!-- CARD 3: PORTFOLIO & CASH -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Danh Mục & Vốn Khả Dụng</span>
+          <span id="kpi-positions-ratio" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">0 / 10 Vị thế</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-2">
+          <span id="kpi-nav" class="text-2xl font-bold mono text-white">1.00B</span>
+          <span class="text-xs text-slate-400">VND</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Trống: <span id="kpi-free-slots" class="text-emerald-400 font-semibold">10</span> slot mở mới</p>
+      </div>
+
+      <!-- CARD 4: SIGNALS COUNT -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Tín Hiệu Phiên Nay</span>
+          <span id="kpi-sync-date" class="text-[11px] font-medium text-slate-400 mono">2024-12-31</span>
+        </div>
+        <div class="mt-2 flex items-baseline space-x-3">
+          <span class="text-2xl font-bold mono text-emerald-400" id="kpi-entry-count">3</span>
+          <span class="text-xs text-slate-400">Mua mới</span>
+          <span class="text-2xl font-bold mono text-rose-400" id="kpi-exit-count">0</span>
+          <span class="text-xs text-slate-400">Thoát lệnh</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Khớp lệnh ATO 09:15 sáng hôm sau</p>
+      </div>
+
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="flex items-center justify-between border-b border-dark-border pb-3">
+      <div class="flex space-x-2">
+        <button onclick="switchTab('entries')" id="tab-btn-entries" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5 transition">
+          <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
+          <span>Tín Hiệu Mua Mới (<span id="tab-entry-count">3</span>)</span>
+        </button>
+        <button onclick="switchTab('exits')" id="tab-btn-exits" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          <span>Quản Trị Vị Thế & Trailing Stop (<span id="tab-exit-count">0</span>)</span>
+        </button>
+        <button onclick="switchTab('chart')" id="tab-btn-chart" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>Biểu Đồ Xu Hướng VN-Index</span>
+        </button>
+      </div>
+
+      <!-- SEARCH INPUT -->
+      <div class="relative w-48 sm:w-64">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+        <input type="text" id="filter-search" oninput="filterSignals()" placeholder="Tìm mã CP..." class="w-full bg-dark-card border border-dark-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+      </div>
+    </div>
+
+    <!-- TAB 1: ENTRY SIGNALS TABLE -->
+    <div id="tab-content-entries" class="space-y-4">
+      <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-dark-bg/80 text-slate-400 font-semibold border-b border-dark-border uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="px-4 py-3">Ưu Tiên</th>
+                <th class="px-4 py-3">Mã CP</th>
+                <th class="px-4 py-3 text-right">Giá Đóng Cửa</th>
+                <th class="px-4 py-3 text-right">Mức Phá Vỡ</th>
+                <th class="px-4 py-3 text-right">Stop Loss (ATR)</th>
+                <th class="px-4 py-3 text-right">Khối Lượng Gợi Ý</th>
+                <th class="px-4 py-3 text-right">Giá Trị Lệnh</th>
+                <th class="px-4 py-3 text-right">% Vốn</th>
+                <th class="px-4 py-3 text-right">ADTV 60P</th>
+                <th class="px-4 py-3 text-center">Cảnh Báo Vi Mô</th>
+                <th class="px-4 py-3 text-center">Hành Động</th>
+              </tr>
+            </thead>
+            <tbody id="entries-tbody" class="divide-y divide-dark-border font-normal">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: EXIT & TRAILING STOP TABLE -->
+    <div id="tab-content-exits" class="space-y-4 hidden">
+      <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-dark-bg/80 text-slate-400 font-semibold border-b border-dark-border uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="px-4 py-3">Mã CP</th>
+                <th class="px-4 py-3">Ngày Vào</th>
+                <th class="px-4 py-3 text-right">Giá Vốn</th>
+                <th class="px-4 py-3 text-right">Thị Giá Hiện Tại</th>
+                <th class="px-4 py-3 text-right">Lãi/Lỗ (%)</th>
+                <th class="px-4 py-3 text-right">Trailing Stop Mới</th>
+                <th class="px-4 py-3 text-right">Khối Lượng</th>
+                <th class="px-4 py-3">Khuyến Nghị Hành Động</th>
+                <th class="px-4 py-3">Lý Do Kỹ Thuật</th>
+              </tr>
+            </thead>
+            <tbody id="exits-tbody" class="divide-y divide-dark-border font-normal">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: CHART VIEW -->
+    <div id="tab-content-chart" class="bg-dark-card border border-dark-border rounded-xl p-5 shadow-sm space-y-4 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-white">Chỉ Số VN-Index & Đường Trung Bình SMA100</h3>
+          <p class="text-xs text-slate-400">Bộ lọc xu hướng thị trường (Market Regime) quyết định trạng thái bật/tắt mở vị thế</p>
+        </div>
+        <span class="text-xs font-mono text-slate-400">60 Phiên Gần Nhất</span>
+      </div>
+      <div class="h-80 w-full">
+        <canvas id="vnindexChart"></canvas>
+      </div>
+    </div>
+
+    <!-- HUMAN IN THE LOOP NOTICE -->
+    <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start space-x-3 text-xs text-amber-200">
+      <i data-lucide="info" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+      <div>
+        <strong class="font-semibold text-amber-300">Nguyên Tắc Vận Hành Bắt Buộc (Human-in-the-Loop):</strong>
+        <p class="mt-0.5 text-amber-200/80 leading-relaxed">
+          Hệ thống lượng hóa V-DBO <strong class="text-white">tuyệt đối không tự động đặt lệnh</strong>. Tín hiệu được sinh tự động cuối phiên để nhà đầu tư duyệt, đặt lệnh mở cửa (ATO) thủ công trên phần mềm của Công ty Chứng khoán, và ghi nhận lại giá khớp thực tế vào sổ lệnh <code class="bg-dark-bg px-1.5 py-0.5 rounded text-white mono">data/ledger.csv</code> để kiểm soát trượt giá.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-dark-border bg-dark-card/50 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 space-y-2 sm:space-y-0">
+      <p>© 2026 V-DBO Quant System. Giám sát tự động 15 phút/lần qua GitHub Actions.</p>
+      <div class="flex space-x-4">
+        <a href="https://github.com" target="_blank" class="hover:text-slate-300 transition flex items-center space-x-1">
+          <i data-lucide="github" class="w-3.5 h-3.5"></i>
+          <span>GitHub Repository</span>
+        </a>
+        <span class="text-slate-700">|</span>
+        <span>Múi giờ: Asia/Ho_Chi_Minh</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- EMBEDDED DATA FALLBACK -->
+  <script>
+    window.__FALLBACK_DATA__ = {
+      "sync_time": "2024-12-31 15:30:00",
+      "market_date": "2024-12-31",
+      "regime": {
+        "active": true,
+        "badge": "BẬT (MUA MỚI)",
+        "index_value": 1266.8,
+        "sma_value": 1262.1,
+        "diff_pts": 4.7,
+        "text": "VN-Index nằm trên đường SMA100 (+4.7 điểm)"
+      },
+      "portfolio": {
+        "total_equity": 1000000000.0,
+        "cash": 1000000000.0,
+        "positions_value": 0.0,
+        "n_positions": 0,
+        "max_positions": 10,
+        "free_slots": 10,
+        "drawdown_pct": 0.0
+      },
+      "kill_switch": {
+        "status": "BÌNH THƯỜNG",
+        "level": 0
+      },
+      "entries": [
+        {
+          "rank": 1, "is_recommended": true, "symbol": "BCM", "close": 69690.0,
+          "break_level": 69200.0, "atr": 1222.0, "stop_loss": 66024.0,
+          "shares": 2100, "value": 146349000.0, "weight": 0.146,
+          "risk_vnd": 7699500.0, "adtv": 12688806000.0, "warning": ""
+        },
+        {
+          "rank": 2, "is_recommended": true, "symbol": "SBT", "close": 11240.0,
+          "break_level": 11190.0, "atr": 182.0, "stop_loss": 10694.0,
+          "shares": 13300, "value": 149492000.0, "weight": 0.149,
+          "risk_vnd": 7267500.0, "adtv": 10260324500.0, "warning": ""
+        },
+        {
+          "rank": 3, "is_recommended": true, "symbol": "ACB", "close": 18580.0,
+          "break_level": 18530.0, "atr": 191.0, "stop_loss": 18008.0,
+          "shares": 8000, "value": 148640000.0, "weight": 0.149,
+          "risk_vnd": 4577143.0, "adtv": 108050977500.0, "warning": ""
+        }
+      ],
+      "exits": [],
+      "chart": {
+        "labels": ["T10", "T11", "T12", "Hôm nay"],
+        "index_close": [1240, 1255, 1250, 1266.8],
+        "sma100": [1260, 1261, 1261.5, 1262.1]
+      }
+    };
+  </script>
+
+  <!-- DASHBOARD CONTROLLER SCRIPT -->
+  <script>
+    let currentData = window.__FALLBACK_DATA__;
+    let chartInstance = null;
+    let countdownSeconds = 900; // 15 phút
+
+    async function fetchSignalsData(isManual = false) {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch('data/signals.json?t=' + new Date().getTime());
+        if (res.ok) {
+          currentData = await res.json();
+          countdownSeconds = 900;
+        }
+      } catch (e) {
+        console.warn('Dùng dữ liệu nhúng sẵn do không thể tải data/signals.json:', e);
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        renderDashboard();
+      }
+    }
+
+    function renderDashboard() {
+      // 1. KPI cards
+      const r = currentData.regime;
+      document.getElementById('kpi-vnindex').innerText = r.index_value ? r.index_value.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '--';
+      document.getElementById('kpi-regime-desc').innerHTML = `<i data-lucide="${r.active ? 'arrow-up-right' : 'arrow-down-right'}" class="w-3.5 h-3.5 inline"></i><span>${r.text}</span>`;
+      
+      const badgeReg = document.getElementById('badge-regime');
+      if (r.active) {
+        badgeReg.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badgeReg.innerText = '🟢 BẬT';
+      } else {
+        badgeReg.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        badgeReg.innerText = '🔴 TẮT';
+      }
+
+      const p = currentData.portfolio;
+      const navInBillion = (p.total_equity / 1e9).toFixed(2);
+      document.getElementById('kpi-nav').innerText = navInBillion + 'B';
+      document.getElementById('kpi-positions-ratio').innerText = `${p.n_positions} / ${p.max_positions} Vị thế`;
+      document.getElementById('kpi-free-slots').innerText = p.free_slots;
+      document.getElementById('kpi-drawdown').innerText = (p.drawdown_pct || 0).toFixed(2) + '%';
+      
+      const k = currentData.kill_switch;
+      document.getElementById('badge-killswitch').innerText = k.status;
+
+      document.getElementById('kpi-sync-date').innerText = currentData.market_date || currentData.sync_time;
+      document.getElementById('kpi-entry-count').innerText = (currentData.entries || []).length;
+      document.getElementById('kpi-exit-count').innerText = (currentData.exits || []).length;
+      document.getElementById('tab-entry-count').innerText = (currentData.entries || []).length;
+      document.getElementById('tab-exit-count').innerText = (currentData.exits || []).length;
+
+      // 2. Render Entries Table
+      renderEntriesTable(currentData.entries || []);
+
+      // 3. Render Exits Table
+      renderExitsTable(currentData.exits || []);
+
+      // 4. Render Chart
+      if (currentData.chart) {
+        renderChart(currentData.chart);
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderEntriesTable(entries) {
+      const tbody = document.getElementById('entries-tbody');
+      if (!entries || entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-500">Không có tín hiệu mở vị thế mới hôm nay.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = entries.map(e => `
+        <tr class="hover:bg-dark-hover transition ${e.is_recommended ? 'bg-emerald-950/10' : ''}">
+          <td class="px-4 py-3">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold mono text-xs ${e.is_recommended ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+              ${e.rank}
+            </span>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex items-center space-x-1.5">
+              <span class="font-bold text-white mono text-sm">${e.symbol}</span>
+              ${e.is_recommended ? '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950">MUA</span>' : ''}
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right mono font-semibold text-white">${e.close.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono text-slate-400">${e.break_level.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono text-rose-400 font-medium">${e.stop_loss.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono font-bold text-emerald-400">${e.shares.toLocaleString('vi-VN')} CP</td>
+          <td class="px-4 py-3 text-right mono text-slate-200">${(e.value / 1e6).toFixed(1)}M</td>
+          <td class="px-4 py-3 text-right mono text-slate-300">${(e.weight * 100).toFixed(1)}%</td>
+          <td class="px-4 py-3 text-right mono text-slate-400">${(e.adtv / 1e9).toFixed(1)}B</td>
+          <td class="px-4 py-3 text-center">
+            ${e.warning ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">${e.warning}</span>` : '<span class="text-slate-600 text-xs">—</span>'}
+          </td>
+          <td class="px-4 py-3 text-center">
+            <button onclick="copyOrder('${e.symbol}', ${e.shares}, ${e.close})" class="text-[11px] px-2 py-1 rounded bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-300 transition font-medium border border-slate-700">
+              Copy Lệnh
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderExitsTable(exits) {
+      const tbody = document.getElementById('exits-tbody');
+      if (!exits || exits.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-500">Danh mục hiện không có vị thế chạm điều kiện thoát.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = exits.map(ex => `
+        <tr class="hover:bg-dark-hover transition">
+          <td class="px-4 py-3 font-bold text-white mono text-sm">${ex.symbol}</td>
+          <td class="px-4 py-3 mono text-slate-400">${ex.entry_date}</td>
+          <td class="px-4 py-3 text-right mono text-slate-300">${ex.cost_basis.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono font-semibold text-white">${ex.close.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono font-bold ${ex.pnl_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${ex.pnl_pct >= 0 ? '+' : ''}${(ex.pnl_pct * 100).toFixed(2)}%</td>
+          <td class="px-4 py-3 text-right mono text-rose-400">${ex.stop_loss.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 text-right mono text-slate-300">${ex.shares.toLocaleString('vi-VN')}</td>
+          <td class="px-4 py-3 font-bold text-xs ${ex.action === 'EXIT' ? 'text-rose-400' : 'text-blue-400'}">${ex.action_text}</td>
+          <td class="px-4 py-3 text-xs text-slate-400">${ex.reason}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderChart(chartData) {
+      const ctx = document.getElementById('vnindexChart');
+      if (!ctx) return;
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: [
+            {
+              label: 'VN-Index Đóng Cửa',
+              data: chartData.index_close,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              fill: true,
+              tension: 0.2,
+              borderWidth: 2,
+              pointRadius: 0,
+            },
+            {
+              label: 'Đường SMA100',
+              data: chartData.sma100,
+              borderColor: '#60a5fa',
+              borderDash: [5, 5],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#94a3b8', font: { size: 11 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: '#1f2937' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: '#1f2937' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function switchTab(tabId) {
+      ['entries', 'exits', 'chart'].forEach(t => {
+        document.getElementById(`tab-content-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5';
+      });
+
+      document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      activeBtn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5 transition';
+
+      if (tabId === 'chart' && currentData.chart) {
+        renderChart(currentData.chart);
+      }
+      lucide.createIcons();
+    }
+
+    function filterSignals() {
+      const q = document.getElementById('filter-search').value.toUpperCase().trim();
+      const filtered = (currentData.entries || []).filter(e => e.symbol.includes(q));
+      renderEntriesTable(filtered);
+    }
+
+    function copyOrder(symbol, shares, price) {
+      const text = `ATO ${symbol} MUA ${shares} CP (Giá tham chiếu: ${price.toLocaleString('vi-VN')} đ)`;
+      navigator.clipboard.writeText(text);
+      alert('Đã sao chép lệnh vào clipboard:\n' + text);
+    }
+
+    // Countdown Timer 15 phút
+    setInterval(() => {
+      countdownSeconds--;
+      if (countdownSeconds <= 0) {
+        countdownSeconds = 900;
+        fetchSignalsData();
+      }
+      const m = Math.floor(countdownSeconds / 60);
+      const s = countdownSeconds % 60;
+      const el = document.getElementById('countdown-text');
+      if (el) el.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchSignalsData();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+📢 **BẢN TIN TÍN HIỆU SWING HOSE (V-DBO) — 2024-12-31**
+─────────────────────────────────────────────
+**1. Trạng Thái Thị Trường (Regime):** 🟢 BẬT (Cho phép mua mới)
+   * VN-Index nằm trên đường SMA100 (+4.7 điểm)
+
+**2. Danh Mục Hiện Tại:** 0/10 vị thế | Tiền mặt: 1,000,000,000 VND | Tổng NAV: 1,000,000,000 VND
+
+**3. TÍN HIỆU VÀO LỆNH (Khớp ATO phiên sau):**
+   **1. BCM**
+      • Giá đóng cửa: 69,690 VND (Mức phá: 69,200)
+      • Stop đề xuất: 66,024 VND (ATR14: 1,222)
+      • Khối lượng gợi ý: **2,100** CP (Lô 100)
+      • Giá trị lệnh: 146,349,000 VND (14.6% vốn | Rủi ro: 7,699,500 VND)
+      • ADTV 60P: 12,688,806,000 VND
+   **2. SBT**
+      • Giá đóng cửa: 11,240 VND (Mức phá: 11,190)
+      • Stop đề xuất: 10,694 VND (ATR14: 182)
+      • Khối lượng gợi ý: **13,300** CP (Lô 100)
+      • Giá trị lệnh: 149,492,000 VND (14.9% vốn | Rủi ro: 7,267,500 VND)
+      • ADTV 60P: 10,260,324,500 VND
+   **3. ACB**
+      • Giá đóng cửa: 18,580 VND (Mức phá: 18,530)
+      • Stop đề xuất: 18,008 VND (ATR14: 191)
+      • Khối lượng gợi ý: **8,000** CP (Lô 100)
+      • Giá trị lệnh: 148,640,000 VND (14.9% vốn | Rủi ro: 4,577,143 VND)
+      • ADTV 60P: 108,050,977,500 VND
+
+**4. TÍN HIỆU THOÁT / NÂNG TRAILING STOP:**
+   *(Không có vị thế chạm điểm thoát hoặc nâng stop hôm nay)*
+
+─────────────────────────────────────────────
+📌 *Lưu ý: Hệ thống không tự động đặt lệnh. Con người vui lòng xem xét, tự đặt lệnh và cập nhật giá khớp thực tế vào data/ledger.csv.*

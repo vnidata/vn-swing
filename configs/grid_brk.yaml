@@ -1,0 +1,20 @@
+mode: brk
+description: "Lưới tham số cho chiến lược Donchian Breakout (384 tổ hợp)"
+
+axes:
+  n_in: [20, 30, 40, 55]      # Cửa sổ đỉnh Donchian
+  n_out: [10, 20]             # Cửa sổ đáy thoát lệnh
+  m: [0, 100, 150]            # SMA xu hướng VN-Index (0 = tắt)
+  vm: [0.0, 1.3]              # Bội số khối lượng so với SMA20(V) (0 = tắt)
+  k: [3.0, 99.0]              # Hệ số trailing stop ATR (99 = tắt)
+  clv: [0.0, 0.65]            # Vị trí đóng cửa trong phiên (Close Location Value) (0 = tắt)
+  rs: [0.0, 0.5]              # Phân vị Relative Strength RS126 (0 = tắt)
+
+fast_axes:
+  n_in: [20, 40]
+  n_out: [10, 20]
+  m: [0, 100]
+  vm: [0.0, 1.5]
+  k: [3.0, 99.0]
+  clv: [0.0, 0.65]
+  rs: [0.0, 0.5]

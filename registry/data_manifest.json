@@ -1,0 +1,22 @@
+{
+  "source": "DNSE Entrade + Vietcap",
+  "created_at": "2026-10-12T14:09:01.569896",
+  "files": {
+    "prices": {
+      "path": "prices.parquet",
+      "sha256": "e307d935a288b06ef45375f76efc4f5262650c207e063371dc0605ab841145e5",
+      "rows": 1014781,
+      "symbols_count": 396,
+      "date_min": "2012-03-19",
+      "date_max": "2024-12-31"
+    },
+    "index": {
+      "path": "index.parquet",
+      "sha256": "48d701db821b580c7cfda8bb70fd5c711865ea1dca6bac9adc5a1d3edd8fade5",
+      "rows": 3211,
+      "symbols_count": 1,
+      "date_min": "2012-01-03",
+      "date_max": "2024-12-31"
+    }
+  }
+}
