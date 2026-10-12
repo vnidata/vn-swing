@@ -258,9 +258,9 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     init_cash = float(full_cfg["portfolio"]["init_cash"])
     drawdown = (eq / init_cash - 1.0) if eq < init_cash else 0.0
 
-    # 8. Quét tín hiệu THOÁT / NÂNG STOP
+    # 8. Quét tín hiệu THOÁT / NÂNG STOP (Mô hình Champion: n_out=15, k=3.0)
     exits = []
-    n_out = 10
+    n_out = 15
     k_atr = 3.0
     ll_exit = F.ll(n_out)
 
@@ -298,12 +298,12 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             "entry_date": str(pos_info["entry_date"].date()),
         })
 
-    # 9. Quét tín hiệu VÀO LỆNH mới
+    # 9. Quét tín hiệu VÀO LỆNH mới (Mô hình Champion V-DBO Trend Focus: n_in=30, vm=1.2, clv=0.5)
     entries = []
-    n_in = 20
-    vm = 1.3
-    clv_min = 0.65
-    rs_top = 0.5
+    n_in = 30
+    vm = 1.2
+    clv_min = 0.50
+    rs_top = 0.50
     min_adtv = float(full_cfg["universe"]["min_adtv_vnd"])
 
     sig_mask, strength_mat = generate_breakout_signals(
@@ -408,6 +408,26 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             "sma100": chart_idx_sma100,
         },
     }
+
+    # 11. Đính kèm Lịch sử lệnh & Hiệu suất khuyến nghị thực tế (2025 - Nay)
+    trade_hist_path = ROOT / "data" / "trade_history_2025_2026.json"
+    if trade_hist_path.exists():
+        try:
+            with open(trade_hist_path, "r", encoding="utf-8") as f:
+                hist_data = json.load(f)
+            payload["trade_history"] = hist_data.get("trades", [])
+            payload["trade_summary"] = hist_data.get("metadata", {}).get("summary", {})
+            payload["champion_strategy"] = {
+                "name": hist_data.get("metadata", {}).get("strategy", "V-DBO Trend Focus"),
+                "period": hist_data.get("metadata", {}).get("period", "2025-01-01 to 2026-10-12"),
+                "params": hist_data.get("metadata", {}).get("params", {}),
+                "metrics": hist_data.get("metadata", {}).get("metrics", {}),
+            }
+        except Exception as e:
+            print(f" [CẢNH BÁO] Không đọc được trade_history_2025_2026.json: {e}")
+            payload["trade_history"] = []
+            payload["trade_summary"] = {}
+            payload["champion_strategy"] = {}
 
     # Xuất file web/data/signals.json
     web_dir = ROOT / "web"

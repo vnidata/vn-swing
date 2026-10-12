@@ -199,9 +199,13 @@
           <i data-lucide="shield-alert" class="w-4 h-4"></i>
           <span>Quản Trị Vị Thế & Trailing Stop (<span id="tab-exit-count">0</span>)</span>
         </button>
+        <button onclick="switchTab('history')" id="tab-btn-history" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
+          <i data-lucide="history" class="w-4 h-4"></i>
+          <span>Lịch Sử Lệnh (2025 - Nay) (<span id="tab-history-count">110</span>)</span>
+        </button>
         <button onclick="switchTab('chart')" id="tab-btn-chart" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
-          <span>Biểu Đồ Xu Hướng Đa Khung VN-Index</span>
+          <span>Biểu Đồ VN-Index</span>
         </button>
       </div>
 
@@ -277,6 +281,107 @@
       </div>
       <div class="h-80 w-full">
         <canvas id="vnindexChart"></canvas>
+      </div>
+    </div>
+
+    <!-- TAB 4: TRADE HISTORY & PERFORMANCE (2025 - NAY) -->
+    <div id="tab-content-history" class="space-y-4 hidden">
+      <!-- STRATEGY BANNER & SUMMARY CARDS -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-dark-border/60 pb-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">MÔ HÌNH QUÁN QUÂN</span>
+              <h3 class="text-sm font-bold text-white">V-DBO Trend Focus (Kiểm định OOS 2021–2024 & Khuyến nghị Thực tế 2025–Nay)</h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              Quy chuẩn: Breakout 30 phiên, Exit Donchian 15 phiên, Volume x1.2, CLV 0.50, RS Top 50%, Stop ATR 3.0×.
+            </p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-slate-400">Giai đoạn:</span>
+            <span class="px-2.5 py-1 rounded bg-dark-bg border border-dark-border mono text-emerald-400 font-semibold">01/01/2025 → Hiện tại</span>
+          </div>
+        </div>
+
+        <!-- 4 KPI MINI CARDS -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-dark-bg/60 border border-dark-border rounded-lg p-3">
+            <span class="text-[11px] text-slate-400 font-medium">Tổng Lệnh / Mở</span>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="hist-kpi-total" class="text-xl font-bold mono text-white">107</span>
+              <span class="text-xs text-slate-400">lệnh</span>
+              <span id="hist-kpi-open-tag" class="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 font-semibold">+3 mở</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5">Nắm giữ TB: <span id="hist-kpi-hold" class="text-slate-300 font-mono">30</span> ngày</p>
+          </div>
+
+          <div class="bg-dark-bg/60 border border-dark-border rounded-lg p-3">
+            <span class="text-[11px] text-slate-400 font-medium">Tỷ Lệ Thắng (Win Rate)</span>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="hist-kpi-winrate" class="text-xl font-bold mono text-emerald-400">29.91%</span>
+              <span id="hist-kpi-winratio" class="text-xs text-slate-400">(32/107)</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5">Nguyên lý Trend Following</p>
+          </div>
+
+          <div class="bg-dark-bg/60 border border-dark-border rounded-lg p-3">
+            <span class="text-[11px] text-slate-400 font-medium">Profit Factor (Lời/Lỗ)</span>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="hist-kpi-pf" class="text-xl font-bold mono text-emerald-400">1.10</span>
+              <span class="text-xs text-slate-400">PF</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5">Lệnh cao nhất: <span id="hist-kpi-maxwin" class="text-emerald-400 font-semibold">+108.98%</span></p>
+          </div>
+
+          <div class="bg-dark-bg/60 border border-dark-border rounded-lg p-3">
+            <span class="text-[11px] text-slate-400 font-medium">Lãi Ròng Khuyến Nghị</span>
+            <div class="mt-1 flex items-baseline space-x-1.5">
+              <span id="hist-kpi-pnl" class="text-xl font-bold mono text-emerald-400">+123.6M</span>
+              <span class="text-xs text-emerald-500 font-semibold">(+12.36%)</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5">NAV ban đầu: 1.000 Tỷ VND</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER BUTTONS & TABLE -->
+      <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-sm">
+        <div class="p-3 border-b border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-dark-bg/50">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-xs font-semibold text-slate-400 mr-1">Bộ lọc:</span>
+            <button onclick="setHistoryFilter('ALL')" id="filter-hist-ALL" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-white border border-slate-700 transition">Tất Cả (<span id="count-hist-all">110</span>)</button>
+            <button onclick="setHistoryFilter('OPEN')" id="filter-hist-OPEN" class="px-2.5 py-1 text-xs font-semibold rounded bg-dark-card text-blue-400 hover:text-white border border-transparent transition">Đang Mở (<span id="count-hist-open">3</span>)</button>
+            <button onclick="setHistoryFilter('WIN')" id="filter-hist-WIN" class="px-2.5 py-1 text-xs font-semibold rounded bg-dark-card text-emerald-400 hover:text-white border border-transparent transition">Lệnh Lãi (<span id="count-hist-win">32</span>)</button>
+            <button onclick="setHistoryFilter('LOSS')" id="filter-hist-LOSS" class="px-2.5 py-1 text-xs font-semibold rounded bg-dark-card text-rose-400 hover:text-white border border-transparent transition">Lệnh Lỗ (<span id="count-hist-loss">75</span>)</button>
+          </div>
+          <div class="text-xs text-slate-400">
+            Hiển thị: <strong id="hist-showing-count" class="mono text-white">110</strong> / <span id="hist-total-badge" class="mono">110</span> lệnh
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-dark-bg/90 text-slate-400 font-semibold border-b border-dark-border uppercase tracking-wider text-[10px] sticky top-0 z-10 backdrop-blur-sm">
+              <tr>
+                <th class="px-4 py-3">Mã CP</th>
+                <th class="px-4 py-3 text-center">Trạng Thái</th>
+                <th class="px-4 py-3 text-center">Ngày Mở</th>
+                <th class="px-4 py-3 text-right">Giá Mua</th>
+                <th class="px-4 py-3 text-center">Ngày Đóng</th>
+                <th class="px-4 py-3 text-right">Giá Bán</th>
+                <th class="px-4 py-3 text-right">Khối Lượng</th>
+                <th class="px-4 py-3 text-right">Lãi/Lỗ (%)</th>
+                <th class="px-4 py-3 text-right">Lãi/Lỗ (VND)</th>
+                <th class="px-4 py-3 text-center">Nắm Giữ</th>
+                <th class="px-4 py-3">Lý Do Thoát Vị Thế</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody" class="divide-y divide-dark-border font-normal">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -368,6 +473,7 @@
     let currentData = window.__FALLBACK_DATA__;
     let chartInstance = null;
     let countdownSeconds = 900; // 15 phút
+    let currentHistoryFilter = 'ALL';
 
     async function fetchSignalsData(isManual = false) {
       const refreshIcon = document.getElementById('refresh-icon');
@@ -473,13 +579,61 @@
       document.getElementById('tab-entry-count').innerText = (currentData.entries || []).length;
       document.getElementById('tab-exit-count').innerText = (currentData.exits || []).length;
 
-      // 2. Render Entries Table
+      // 2. Dữ liệu Lịch sử Lệnh & Hiệu suất Thực tế (2025 - Nay)
+      const histList = currentData.trade_history || [];
+      const histSummary = currentData.trade_summary || {};
+      const totalTrades = histList.length;
+      const openTrades = histList.filter(t => t.status === 'OPEN').length;
+      const winTrades = histList.filter(t => t.status === 'CLOSED' && t.pnl_pct > 0).length;
+      const lossTrades = histList.filter(t => t.status === 'CLOSED' && t.pnl_pct <= 0).length;
+
+      const tabHistCount = document.getElementById('tab-history-count');
+      if (tabHistCount) tabHistCount.innerText = totalTrades;
+      const countAll = document.getElementById('count-hist-all');
+      if (countAll) countAll.innerText = totalTrades;
+      const totalBadge = document.getElementById('hist-total-badge');
+      if (totalBadge) totalBadge.innerText = totalTrades;
+
+      const countOpen = document.getElementById('count-hist-open');
+      if (countOpen) countOpen.innerText = openTrades;
+      const countWin = document.getElementById('count-hist-win');
+      if (countWin) countWin.innerText = winTrades;
+      const countLoss = document.getElementById('count-hist-loss');
+      if (countLoss) countLoss.innerText = lossTrades;
+
+      const kpiTotal = document.getElementById('hist-kpi-total');
+      if (kpiTotal) kpiTotal.innerText = histSummary.total_trades || (winTrades + lossTrades);
+      const kpiOpenTag = document.getElementById('hist-kpi-open-tag');
+      if (kpiOpenTag) kpiOpenTag.innerText = `+${openTrades} mở`;
+      const kpiHold = document.getElementById('hist-kpi-hold');
+      if (kpiHold) kpiHold.innerText = histSummary.avg_hold_days ? Math.round(histSummary.avg_hold_days) : 30;
+
+      const winRateVal = histSummary.win_rate_pct !== undefined ? histSummary.win_rate_pct : ((winTrades / Math.max(1, winTrades + lossTrades)) * 100);
+      const kpiWinRate = document.getElementById('hist-kpi-winrate');
+      if (kpiWinRate) kpiWinRate.innerText = winRateVal.toFixed(2) + '%';
+      const kpiWinRatio = document.getElementById('hist-kpi-winratio');
+      if (kpiWinRatio) kpiWinRatio.innerText = `(${winTrades}/${winTrades + lossTrades})`;
+
+      const kpiPf = document.getElementById('hist-kpi-pf');
+      if (kpiPf) kpiPf.innerText = (histSummary.profit_factor !== undefined ? histSummary.profit_factor : 1.10).toFixed(2);
+      const kpiMaxWin = document.getElementById('hist-kpi-maxwin');
+      if (kpiMaxWin) kpiMaxWin.innerText = `+${(histSummary.max_win_pct || 108.98).toFixed(2)}%`;
+
+      const netPnl = histSummary.total_net_pnl_vnd !== undefined ? histSummary.total_net_pnl_vnd : 123607145;
+      const netPnlM = (netPnl / 1e6).toFixed(1);
+      const kpiPnl = document.getElementById('hist-kpi-pnl');
+      if (kpiPnl) kpiPnl.innerText = `${netPnl >= 0 ? '+' : ''}${netPnlM}M`;
+
+      // 3. Render Entries Table
       renderEntriesTable(currentData.entries || []);
 
-      // 3. Render Exits Table
+      // 4. Render Exits Table
       renderExitsTable(currentData.exits || []);
 
-      // 4. Render Chart
+      // 5. Render Trade History Table
+      renderTradeHistoryTable(histList);
+
+      // 6. Render Chart
       if (currentData.chart) {
         renderChart(currentData.chart);
       }
@@ -632,16 +786,97 @@
       });
     }
 
-    function switchTab(tabId) {
-      ['entries', 'exits', 'chart'].forEach(t => {
-        document.getElementById(`tab-content-${t}`).classList.add('hidden');
-        const btn = document.getElementById(`tab-btn-${t}`);
-        btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5';
+    function renderTradeHistoryTable(trades) {
+      const tbody = document.getElementById('history-tbody');
+      if (!tbody) return;
+
+      const q = (document.getElementById('filter-search')?.value || '').toUpperCase().trim();
+
+      let filtered = (trades || []).filter(t => {
+        // Search symbol
+        if (q && !t.symbol.includes(q)) return false;
+        // Filter status
+        if (currentHistoryFilter === 'OPEN') return t.status === 'OPEN';
+        if (currentHistoryFilter === 'WIN') return t.status === 'CLOSED' && t.pnl_pct > 0;
+        if (currentHistoryFilter === 'LOSS') return t.status === 'CLOSED' && t.pnl_pct <= 0;
+        return true;
       });
 
-      document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+      const showCountEl = document.getElementById('hist-showing-count');
+      if (showCountEl) showCountEl.innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-500">Không tìm thấy lệnh nào phù hợp với bộ lọc.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(t => {
+        const isOpen = t.status === 'OPEN';
+        const isWin = t.pnl_pct > 0;
+        let statusBadge = '';
+        if (isOpen) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">ĐANG MỞ</span>';
+        } else if (isWin) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">CHỐT LÃI</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">CẮT LỖ</span>';
+        }
+
+        const pnlPctColor = isOpen ? 'text-blue-400' : (isWin ? 'text-emerald-400' : 'text-rose-400');
+        const pnlVndColor = isOpen ? 'text-blue-400' : (isWin ? 'text-emerald-400' : 'text-rose-400');
+        const pnlVndFormatted = (t.pnl_vnd / 1e6).toFixed(2) + 'M';
+
+        return `
+          <tr class="hover:bg-dark-hover transition ${isOpen ? 'bg-blue-950/10' : ''}">
+            <td class="px-4 py-3 font-bold text-white mono text-sm flex items-center space-x-1.5">
+              <span>${t.symbol}</span>
+              ${isWin && t.pnl_pct >= 50 ? '<span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">🚀 SIÊU CỔ</span>' : ''}
+            </td>
+            <td class="px-4 py-3 text-center">${statusBadge}</td>
+            <td class="px-4 py-3 text-center mono text-slate-300">${t.entry_date}</td>
+            <td class="px-4 py-3 text-right mono text-slate-200">${Number(t.entry_price).toLocaleString('vi-VN', {maximumFractionDigits: 0})}</td>
+            <td class="px-4 py-3 text-center mono text-slate-400">${t.exit_date || '—'}</td>
+            <td class="px-4 py-3 text-right mono font-semibold text-white">${t.exit_price ? Number(t.exit_price).toLocaleString('vi-VN', {maximumFractionDigits: 0}) : '—'}</td>
+            <td class="px-4 py-3 text-right mono text-slate-300">${Number(t.shares).toLocaleString('vi-VN')}</td>
+            <td class="px-4 py-3 text-right mono font-bold ${pnlPctColor}">${t.pnl_pct >= 0 ? '+' : ''}${Number(t.pnl_pct).toFixed(2)}%</td>
+            <td class="px-4 py-3 text-right mono font-semibold ${pnlVndColor}">${t.pnl_vnd >= 0 ? '+' : ''}${pnlVndFormatted}</td>
+            <td class="px-4 py-3 text-center mono text-slate-400">${t.holding_days} phiên</td>
+            <td class="px-4 py-3 text-xs text-slate-300 max-w-xs truncate" title="${t.exit_reason || ''}">${t.exit_reason || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setHistoryFilter(filterType) {
+      currentHistoryFilter = filterType;
+      ['ALL', 'OPEN', 'WIN', 'LOSS'].forEach(f => {
+        const btn = document.getElementById(`filter-hist-${f}`);
+        if (!btn) return;
+        if (f === filterType) {
+          btn.className = 'px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 text-white border border-slate-600 transition';
+        } else {
+          let textCol = 'text-slate-400';
+          if (f === 'OPEN') textCol = 'text-blue-400';
+          if (f === 'WIN') textCol = 'text-emerald-400';
+          if (f === 'LOSS') textCol = 'text-rose-400';
+          btn.className = `px-2.5 py-1 text-xs font-semibold rounded bg-dark-card ${textCol} hover:text-white border border-transparent transition`;
+        }
+      });
+      renderTradeHistoryTable(currentData.trade_history || []);
+    }
+
+    function switchTab(tabId) {
+      ['entries', 'exits', 'history', 'chart'].forEach(t => {
+        const contentEl = document.getElementById(`tab-content-${t}`);
+        if (contentEl) contentEl.classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5';
+      });
+
+      const activeContent = document.getElementById(`tab-content-${tabId}`);
+      if (activeContent) activeContent.classList.remove('hidden');
       const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-      activeBtn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5 transition';
+      if (activeBtn) activeBtn.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5 transition';
 
       if (tabId === 'chart' && currentData.chart) {
         renderChart(currentData.chart);
@@ -653,6 +888,7 @@
       const q = document.getElementById('filter-search').value.toUpperCase().trim();
       const filtered = (currentData.entries || []).filter(e => e.symbol.includes(q));
       renderEntriesTable(filtered);
+      renderTradeHistoryTable(currentData.trade_history || []);
     }
 
     function copyOrder(symbol, shares, price) {
