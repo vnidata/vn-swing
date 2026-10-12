@@ -3,60 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>V-DBO Quant Terminal | Tín Hiệu Swing HOSE</title>
+  <title>VN-Swing | Giám Sát Tín Hiệu Định Lượng HOSE (V-DBO)</title>
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
           colors: {
-            brand: {
-              50: '#ecfdf5',
-              500: '#10b981',
-              600: '#059669',
-              900: '#064e3b',
-            },
             dark: {
-              bg: '#0b0f19',
+              bg: '#0b0f17',
               card: '#111827',
               border: '#1f2937',
-              hover: '#1e293b'
+              hover: '#1e293b',
             }
           }
         }
       }
     }
   </script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    body { background-color: #0b0f17; color: #f3f4f6; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="border-b border-dark-border bg-dark-card/90 backdrop-blur sticky top-0 z-50">
+  <!-- TOP NAVIGATION HEADER -->
+  <header class="border-b border-dark-border bg-dark-card/80 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- LOGO & STRATEGY BADGE -->
       <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i data-lucide="activity" class="w-5 h-5 text-slate-950 font-black"></i>
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-base font-bold tracking-tight text-white">V-DBO Quant Terminal</h1>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold tracking-wide uppercase">HOSE Swing</span>
+            <h1 class="text-base font-bold tracking-tight text-white">VN-SWING QUANT</h1>
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">V-DBO v2.2</span>
           </div>
-          <p class="text-xs text-slate-400">Vietnam Donchian Breakout & Pullback Engine</p>
+          <p class="text-xs text-slate-400">Hệ thống theo dõi tín hiệu định lượng cổ phiếu HOSE (T+2.5)</p>
         </div>
       </div>
 
@@ -80,71 +85,115 @@
     <!-- KPI SUMMARY CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       
-      <!-- CARD 1: MARKET REGIME -->
-      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm relative overflow-hidden">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400">Xu Hướng Thị Trường (Regime)</span>
-          <span id="badge-regime" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 BẬT</span>
+      <!-- CARD 1: MARKET REGIME & DOMINANT TREND -->
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300">Xu Hướng Thị Trường</span>
+            <span id="badge-regime" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 DỪNG MUA</span>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-vnindex" class="text-2xl font-bold mono text-white">1,720.98</span>
+            <span class="text-xs text-slate-400">VN-Index</span>
+          </div>
+          
+          <!-- TRẠNG THÁI XU HƯỚNG CHỦ ĐẠO -->
+          <div class="mt-2.5 pt-2 border-t border-dark-border/60">
+            <div class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Xu Hướng Chủ Đạo:</div>
+            <div class="mt-1 flex items-center justify-between">
+              <span id="badge-primary-trend" class="text-xs font-bold px-2 py-0.5 rounded border bg-rose-500/20 text-rose-400 border-rose-500/30">
+                🔴 DOWNTREND TRUNG HẠN
+              </span>
+            </div>
+            <p id="kpi-trend-desc" class="text-[11px] text-slate-400 mt-1 leading-snug">
+              VN-Index nằm dưới cả SMA50 và SMA100.
+            </p>
+          </div>
         </div>
-        <div class="mt-2 flex items-baseline space-x-2">
-          <span id="kpi-vnindex" class="text-2xl font-bold mono text-white">1,266.8</span>
-          <span class="text-xs text-slate-400">VN-Index</span>
+
+        <!-- MULTI-TIMEFRAME MA PILLS -->
+        <div id="kpi-ma-pills" class="mt-2.5 pt-2 border-t border-dark-border/40 flex items-center justify-between text-[10px] mono text-slate-400">
+          <span title="Ngắn hạn" id="pill-ma20" class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border">MA20: --</span>
+          <span title="Trung hạn" id="pill-ma50" class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border">MA50: --</span>
+          <span title="Dài hạn" id="pill-ma100" class="px-1.5 py-0.5 rounded bg-dark-bg border border-dark-border">MA100: --</span>
         </div>
-        <p id="kpi-regime-desc" class="text-xs text-emerald-400 mt-1 flex items-center space-x-1">
-          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 inline"></i>
-          <span>Trên SMA100 (+4.7 điểm)</span>
-        </p>
       </div>
 
       <!-- CARD 2: RISK & KILL SWITCH -->
-      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400">Quản Trị Rủi Ro (Kill-Switch)</span>
-          <span id="badge-killswitch" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">BÌNH THƯỜNG</span>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Quản Trị Rủi Ro (Kill-Switch)</span>
+            <span id="badge-killswitch" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">BÌNH THƯỜNG</span>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-drawdown" class="text-2xl font-bold mono text-emerald-400">0.00%</span>
+            <span class="text-xs text-slate-400">Max DD</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Ngưỡng: Cấp 1 (-15%), Cấp 2 (-25%)</p>
         </div>
-        <div class="mt-2 flex items-baseline space-x-2">
-          <span id="kpi-drawdown" class="text-2xl font-bold mono text-emerald-400">0.00%</span>
-          <span class="text-xs text-slate-400">Max DD</span>
+        <div class="mt-3 pt-2 border-t border-dark-border/60 text-[11px] text-slate-400">
+          Tự động giảm 50% rủi ro khi sụt giảm vượt 15%.
         </div>
-        <p class="text-xs text-slate-400 mt-1">Ngưỡng: Cấp 1 (-15%), Cấp 2 (-25%)</p>
       </div>
 
       <!-- CARD 3: PORTFOLIO & CASH -->
-      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400">Danh Mục & Vốn Khả Dụng</span>
-          <span id="kpi-positions-ratio" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">0 / 10 Vị thế</span>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Danh Mục & Vốn Khả Dụng</span>
+            <span id="kpi-positions-ratio" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">0 / 10 Vị thế</span>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-nav" class="text-2xl font-bold mono text-white">1.00B</span>
+            <span class="text-xs text-slate-400">VND</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Trống: <span id="kpi-free-slots" class="text-emerald-400 font-semibold">10</span> slot mở mới</p>
         </div>
-        <div class="mt-2 flex items-baseline space-x-2">
-          <span id="kpi-nav" class="text-2xl font-bold mono text-white">1.00B</span>
-          <span class="text-xs text-slate-400">VND</span>
+        <div class="mt-3 pt-2 border-t border-dark-border/60 text-[11px] text-slate-400">
+          Quy mô chuẩn: Tối đa 15% NAV/mã.
         </div>
-        <p class="text-xs text-slate-400 mt-1">Trống: <span id="kpi-free-slots" class="text-emerald-400 font-semibold">10</span> slot mở mới</p>
       </div>
 
       <!-- CARD 4: SIGNALS COUNT -->
-      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-slate-400">Tín Hiệu Phiên Nay</span>
-          <span id="kpi-sync-date" class="text-[11px] font-medium text-slate-400 mono">2024-12-31</span>
+      <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Tín Hiệu Phiên Nay</span>
+            <span id="kpi-sync-date" class="text-[11px] font-medium text-emerald-400 mono">2026-10-12</span>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-3">
+            <span class="text-2xl font-bold mono text-emerald-400" id="kpi-entry-count">0</span>
+            <span class="text-xs text-slate-400">Mua mới</span>
+            <span class="text-2xl font-bold mono text-rose-400" id="kpi-exit-count">0</span>
+            <span class="text-xs text-slate-400">Thoát lệnh</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Khớp lệnh ATO 09:15 sáng hôm sau</p>
         </div>
-        <div class="mt-2 flex items-baseline space-x-3">
-          <span class="text-2xl font-bold mono text-emerald-400" id="kpi-entry-count">3</span>
-          <span class="text-xs text-slate-400">Mua mới</span>
-          <span class="text-2xl font-bold mono text-rose-400" id="kpi-exit-count">0</span>
-          <span class="text-xs text-slate-400">Thoát lệnh</span>
+        <div class="mt-3 pt-2 border-t border-dark-border/60 text-[11px] text-slate-400">
+          Cập nhật realtime 15 phút/lần tự động.
         </div>
-        <p class="text-xs text-slate-400 mt-1">Khớp lệnh ATO 09:15 sáng hôm sau</p>
       </div>
 
     </div>
 
-    <!-- TABS NAVIGATION -->
-    <div class="flex items-center justify-between border-b border-dark-border pb-3">
-      <div class="flex space-x-2">
+    <!-- STRATEGIC MARKET ADVICE BANNER -->
+    <div id="banner-trend-advice" class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start space-x-3 text-xs text-rose-200">
+      <i data-lucide="shield-alert" class="w-5 h-5 text-rose-400 shrink-0 mt-0.5"></i>
+      <div>
+        <strong id="advice-title" class="font-semibold text-rose-300">Khuyến Nghị Chiến Lược Từ Hệ Thống:</strong>
+        <p id="advice-body" class="mt-0.5 text-rose-200/90 leading-relaxed">
+          Xu hướng giảm chủ đạo đang chiếm ưu thế trên thị trường chung (VN-Index nằm dưới cả SMA50 và SMA100). Hệ thống TẮT bộ lọc mua mới để bảo toàn vốn, ưu tiên quản trị chặt trailing stop đối với các vị thế hiện có.
+        </p>
+      </div>
+    </div>
+
+    <!-- TABS CONTROLLER & FILTERS -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-4">
+      <div class="flex items-center space-x-2">
         <button onclick="switchTab('entries')" id="tab-btn-entries" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5 transition">
-          <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
-          <span>Tín Hiệu Mua Mới (<span id="tab-entry-count">3</span>)</span>
+          <i data-lucide="trending-up" class="w-4 h-4"></i>
+          <span>Tín Hiệu Vào Lệnh ATO (<span id="tab-entry-count">0</span>)</span>
         </button>
         <button onclick="switchTab('exits')" id="tab-btn-exits" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
           <i data-lucide="shield-alert" class="w-4 h-4"></i>
@@ -152,7 +201,7 @@
         </button>
         <button onclick="switchTab('chart')" id="tab-btn-chart" class="px-4 py-2 text-xs font-semibold rounded-lg bg-dark-card text-slate-400 hover:text-white border border-transparent transition flex items-center space-x-1.5">
           <i data-lucide="line-chart" class="w-4 h-4"></i>
-          <span>Biểu Đồ Xu Hướng VN-Index</span>
+          <span>Biểu Đồ Xu Hướng Đa Khung VN-Index</span>
         </button>
       </div>
 
@@ -221,8 +270,8 @@
     <div id="tab-content-chart" class="bg-dark-card border border-dark-border rounded-xl p-5 shadow-sm space-y-4 hidden">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-bold text-white">Chỉ Số VN-Index & Đường Trung Bình SMA100</h3>
-          <p class="text-xs text-slate-400">Bộ lọc xu hướng thị trường (Market Regime) quyết định trạng thái bật/tắt mở vị thế</p>
+          <h3 class="text-sm font-bold text-white">Chỉ Số VN-Index & Hệ Thống Đa Khung Xu Hướng (SMA20, SMA50, SMA100)</h3>
+          <p class="text-xs text-slate-400">Trực quan hóa cấu trúc xu hướng chủ đạo của thị trường chung để xác định trạng thái thị trường</p>
         </div>
         <span class="text-xs font-mono text-slate-400">60 Phiên Gần Nhất</span>
       </div>
@@ -247,30 +296,47 @@
   <!-- FOOTER -->
   <footer class="border-t border-dark-border bg-dark-card/50 py-4 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 space-y-2 sm:space-y-0">
-      <p>© 2026 V-DBO Quant System. Giám sát tự động 15 phút/lần qua GitHub Actions.</p>
-      <div class="flex space-x-4">
-        <a href="https://github.com" target="_blank" class="hover:text-slate-300 transition flex items-center space-x-1">
-          <i data-lucide="github" class="w-3.5 h-3.5"></i>
-          <span>GitHub Repository</span>
-        </a>
-        <span class="text-slate-700">|</span>
-        <span>Múi giờ: Asia/Ho_Chi_Minh</span>
+      <p>© 2026 V-DBO Quant System. Giám sát tự động 15 phút/lần qua GitHub Actions & Entrade API.</p>
+      <div class="flex items-center space-x-4">
+        <span>T+2.5 Settlement</span>
+        <span>•</span>
+        <span>ATR 3.0× Stop</span>
+        <span>•</span>
+        <span>Max 15% NAV/Mã</span>
       </div>
     </div>
   </footer>
 
-  <!-- EMBEDDED DATA FALLBACK -->
+  <!-- EMBEDDED REALTIME FALLBACK DATA -->
   <script>
     window.__FALLBACK_DATA__ = {
-      "sync_time": "2024-12-31 15:30:00",
-      "market_date": "2024-12-31",
+      "sync_time": "2026-10-12 16:04:17",
+      "market_date": "2026-10-12",
+      "next_sync_seconds": 900,
       "regime": {
-        "active": true,
-        "badge": "BẬT (MUA MỚI)",
-        "index_value": 1266.8,
-        "sma_value": 1262.1,
-        "diff_pts": 4.7,
-        "text": "VN-Index nằm trên đường SMA100 (+4.7 điểm)"
+        "active": false,
+        "badge": "TẮT (NGỪNG MUA)",
+        "index_value": 1720.98,
+        "sma_value": 1797.88,
+        "diff_pts": -76.9,
+        "diff_pct": -4.28,
+        "text": "VN-Index nằm dưới đường SMA100 (-76.9 điểm)",
+        "primary_trend": {
+          "status": "GIẢM GIÁ (DOWNTREND TRUNG HẠN)",
+          "badge": "🔴 DOWNTREND TRUNG HẠN",
+          "color": "rose",
+          "description": "VN-Index nằm dưới cả SMA50 và SMA100. Xu hướng điều chỉnh giảm chủ đạo đang chiếm ưu thế trên thị trường.",
+          "action_advice": "TẮT bộ lọc mua mới. Ưu tiên bảo toàn vốn, quản trị chặt trailing stop và hạ tỷ trọng danh mục.",
+          "sma20": 1775.64,
+          "sma50": 1780.14,
+          "sma100": 1797.88,
+          "diff_sma20_pts": -54.66,
+          "diff_sma50_pts": -59.16,
+          "diff_sma100_pts": -76.9,
+          "diff_sma20_pct": -3.08,
+          "diff_sma50_pct": -3.32,
+          "diff_sma100_pct": -4.28
+        }
       },
       "portfolio": {
         "total_equity": 1000000000.0,
@@ -285,31 +351,14 @@
         "status": "BÌNH THƯỜNG",
         "level": 0
       },
-      "entries": [
-        {
-          "rank": 1, "is_recommended": true, "symbol": "BCM", "close": 69690.0,
-          "break_level": 69200.0, "atr": 1222.0, "stop_loss": 66024.0,
-          "shares": 2100, "value": 146349000.0, "weight": 0.146,
-          "risk_vnd": 7699500.0, "adtv": 12688806000.0, "warning": ""
-        },
-        {
-          "rank": 2, "is_recommended": true, "symbol": "SBT", "close": 11240.0,
-          "break_level": 11190.0, "atr": 182.0, "stop_loss": 10694.0,
-          "shares": 13300, "value": 149492000.0, "weight": 0.149,
-          "risk_vnd": 7267500.0, "adtv": 10260324500.0, "warning": ""
-        },
-        {
-          "rank": 3, "is_recommended": true, "symbol": "ACB", "close": 18580.0,
-          "break_level": 18530.0, "atr": 191.0, "stop_loss": 18008.0,
-          "shares": 8000, "value": 148640000.0, "weight": 0.149,
-          "risk_vnd": 4577143.0, "adtv": 108050977500.0, "warning": ""
-        }
-      ],
+      "entries": [],
       "exits": [],
       "chart": {
-        "labels": ["T10", "T11", "T12", "Hôm nay"],
-        "index_close": [1240, 1255, 1250, 1266.8],
-        "sma100": [1260, 1261, 1261.5, 1262.1]
+        "labels": ["2026-07-15", "2026-08-15", "2026-09-15", "2026-10-12"],
+        "index_close": [1780.0, 1810.0, 1760.0, 1720.98],
+        "sma20": [1760.0, 1790.0, 1780.0, 1775.64],
+        "sma50": [1740.0, 1770.0, 1785.0, 1780.14],
+        "sma100": [1720.0, 1750.0, 1790.0, 1797.88]
       }
     };
   </script>
@@ -342,15 +391,70 @@
       // 1. KPI cards
       const r = currentData.regime;
       document.getElementById('kpi-vnindex').innerText = r.index_value ? r.index_value.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '--';
-      document.getElementById('kpi-regime-desc').innerHTML = `<i data-lucide="${r.active ? 'arrow-up-right' : 'arrow-down-right'}" class="w-3.5 h-3.5 inline"></i><span>${r.text}</span>`;
       
       const badgeReg = document.getElementById('badge-regime');
       if (r.active) {
-        badgeReg.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-        badgeReg.innerText = '🟢 BẬT';
+        badgeReg.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badgeReg.innerText = '🟢 MUA MỚI';
       } else {
-        badgeReg.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30';
-        badgeReg.innerText = '🔴 TẮT';
+        badgeReg.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        badgeReg.innerText = '🔴 DỪNG MUA';
+      }
+
+      // XU HƯỚNG CHỦ ĐẠO
+      const pt = r.primary_trend;
+      if (pt) {
+        const badgeTrend = document.getElementById('badge-primary-trend');
+        if (badgeTrend) {
+          badgeTrend.innerText = pt.badge;
+          if (pt.color === 'emerald') {
+            badgeTrend.className = 'text-xs font-bold px-2 py-0.5 rounded border bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+          } else if (pt.color === 'amber') {
+            badgeTrend.className = 'text-xs font-bold px-2 py-0.5 rounded border bg-amber-500/20 text-amber-400 border-amber-500/30';
+          } else if (pt.color === 'slate') {
+            badgeTrend.className = 'text-xs font-bold px-2 py-0.5 rounded border bg-slate-500/20 text-slate-300 border-slate-500/30';
+          } else {
+            badgeTrend.className = 'text-xs font-bold px-2 py-0.5 rounded border bg-rose-500/20 text-rose-400 border-rose-500/30';
+          }
+        }
+
+        const descEl = document.getElementById('kpi-trend-desc');
+        if (descEl) descEl.innerText = pt.description;
+
+        const pill20 = document.getElementById('pill-ma20');
+        if (pill20) {
+          pill20.innerText = `MA20: ${pt.sma20 ? pt.sma20.toLocaleString('vi-VN') : '--'}`;
+          pill20.className = `px-1.5 py-0.5 rounded border ${pt.diff_sma20_pts >= 0 ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40' : 'bg-rose-950/40 text-rose-400 border-rose-800/40'}`;
+        }
+        const pill50 = document.getElementById('pill-ma50');
+        if (pill50) {
+          pill50.innerText = `MA50: ${pt.sma50 ? pt.sma50.toLocaleString('vi-VN') : '--'}`;
+          pill50.className = `px-1.5 py-0.5 rounded border ${pt.diff_sma50_pts >= 0 ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40' : 'bg-rose-950/40 text-rose-400 border-rose-800/40'}`;
+        }
+        const pill100 = document.getElementById('pill-ma100');
+        if (pill100) {
+          pill100.innerText = `MA100: ${pt.sma100 ? pt.sma100.toLocaleString('vi-VN') : '--'}`;
+          pill100.className = `px-1.5 py-0.5 rounded border ${pt.diff_sma100_pts >= 0 ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40' : 'bg-rose-950/40 text-rose-400 border-rose-800/40'}`;
+        }
+
+        // Cập nhật banner khuyến nghị chiến lược
+        const bannerEl = document.getElementById('banner-trend-advice');
+        const titleEl = document.getElementById('advice-title');
+        const bodyEl = document.getElementById('advice-body');
+        if (bannerEl && titleEl && bodyEl) {
+          titleEl.innerText = `Khuyến Nghị Chiến Lược (${pt.status}):`;
+          bodyEl.innerText = `${pt.description} ${pt.action_advice}`;
+          if (pt.color === 'emerald') {
+            bannerEl.className = 'bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-start space-x-3 text-xs text-emerald-200';
+            titleEl.className = 'font-semibold text-emerald-300';
+          } else if (pt.color === 'amber') {
+            bannerEl.className = 'bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start space-x-3 text-xs text-amber-200';
+            titleEl.className = 'font-semibold text-amber-300';
+          } else {
+            bannerEl.className = 'bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start space-x-3 text-xs text-rose-200';
+            titleEl.className = 'font-semibold text-rose-300';
+          }
+        }
       }
 
       const p = currentData.portfolio;
@@ -386,7 +490,8 @@
     function renderEntriesTable(entries) {
       const tbody = document.getElementById('entries-tbody');
       if (!entries || entries.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-500">Không có tín hiệu mở vị thế mới hôm nay.</td></tr>`;
+        const isOff = !currentData.regime?.active;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-500">${isOff ? 'Bộ lọc Regime đang TẮT do thị trường chung giảm giá (Downtrend). Hệ thống không kích hoạt lệnh mua mới.' : 'Không có tín hiệu mở vị thế mới hôm nay.'}</td></tr>`;
         return;
       }
 
@@ -447,33 +552,63 @@
     function renderChart(chartData) {
       const ctx = document.getElementById('vnindexChart');
       if (!ctx) return;
+
       if (chartInstance) chartInstance.destroy();
+
+      const datasets = [
+        {
+          label: 'VN-Index Đóng Cửa',
+          data: chartData.index_close,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.05)',
+          fill: true,
+          tension: 0.2,
+          borderWidth: 2.5,
+          pointRadius: 0,
+        }
+      ];
+
+      if (chartData.sma20) {
+        datasets.push({
+          label: 'SMA20 (Ngắn hạn)',
+          data: chartData.sma20,
+          borderColor: '#f59e0b',
+          borderDash: [3, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        });
+      }
+
+      if (chartData.sma50) {
+        datasets.push({
+          label: 'SMA50 (Trung hạn)',
+          data: chartData.sma50,
+          borderColor: '#a855f7',
+          borderDash: [4, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        });
+      }
+
+      if (chartData.sma100) {
+        datasets.push({
+          label: 'SMA100 (Dài hạn)',
+          data: chartData.sma100,
+          borderColor: '#3b82f6',
+          borderDash: [5, 5],
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+        });
+      }
 
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: chartData.labels,
-          datasets: [
-            {
-              label: 'VN-Index Đóng Cửa',
-              data: chartData.index_close,
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              fill: true,
-              tension: 0.2,
-              borderWidth: 2,
-              pointRadius: 0,
-            },
-            {
-              label: 'Đường SMA100',
-              data: chartData.sma100,
-              borderColor: '#60a5fa',
-              borderDash: [5, 5],
-              borderWidth: 1.5,
-              pointRadius: 0,
-              fill: false,
-            }
-          ]
+          datasets: datasets
         },
         options: {
           responsive: true,

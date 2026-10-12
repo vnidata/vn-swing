@@ -1,8 +1,10 @@
 """
-Module đồng bộ dữ liệu Web Dashboard và phát tín hiệu tự động.
+Module đồng bộ dữ liệu Web Dashboard và phát tín hiệu tự động thời gian thực.
 Hỗ trợ cả chạy định kỳ trên GitHub Actions (15 phút/lần) và chạy local.
-Xuất dữ liệu ra web/data/signals.json và nhúng trực tiếp vào web/index.html để mở offline.
+Tự động cập nhật dữ liệu đến phiên hiện tại và phân tích Xu Hướng Chủ Đạo của thị trường chung.
+Xuất dữ liệu ra web/data/signals.json.
 """
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 import json
 import os
@@ -25,6 +27,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from vnswing.data.ingest import fetch_ohlcv_dnse
 from vnswing.features.indicators import FeatureEngine
 from vnswing.signals.breakout import generate_breakout_signals
 from vnswing.ops.ledger import OrderLedger
@@ -62,8 +65,118 @@ def fetch_latest_intraday_price(symbol: str, is_index: bool = False) -> Optional
     return None
 
 
+def ensure_latest_market_data(df_px: pd.DataFrame, df_idx: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+    """
+    Tự động kiểm tra và cập nhật nến ngày mới nhất từ sàn nếu dữ liệu cũ hơn ngày hôm nay.
+    Giúp hệ thống luôn bám sát phiên hiện tại bất kể chạy ở máy local hay GitHub Actions.
+    """
+    adj_dir = ROOT / "data" / "adjusted"
+    today = datetime.now().date()
+    last_idx_date = df_idx["date"].max().date()
+
+    if last_idx_date < today:
+        start_date = (last_idx_date + timedelta(days=1)).strftime("%Y-%m-%d")
+        today_str = today.strftime("%Y-%m-%d")
+        print(f"[*] Cập nhật dữ liệu từ {start_date} đến {today_str}...")
+
+        # 1. Cập nhật VNINDEX
+        new_idx = fetch_ohlcv_dnse("VNINDEX", from_date=start_date, to_date=today_str, is_index=True)
+        if new_idx is not None and len(new_idx) > 0:
+            df_idx = pd.concat([df_idx, new_idx], ignore_index=True).drop_duplicates(subset=["date"]).sort_values("date").reset_index(drop=True)
+            df_idx.to_parquet(adj_dir / "index.parquet", index=False)
+            print(f" -> VN-Index đã được cập nhật đến: {df_idx['date'].max().date()}")
+
+        # 2. Cập nhật cổ phiếu
+        symbols = sorted(df_px["symbol"].unique())
+        new_stock_dfs = []
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            futures = {executor.submit(fetch_ohlcv_dnse, sym, start_date, today_str, False): sym for sym in symbols}
+            for fut in as_completed(futures):
+                res = fut.result()
+                if res is not None and len(res) > 0:
+                    new_stock_dfs.append(res)
+
+        if new_stock_dfs:
+            df_px = pd.concat([df_px] + new_stock_dfs, ignore_index=True)
+            df_px["date"] = pd.to_datetime(df_px["date"])
+            df_px = df_px.drop_duplicates(subset=["symbol", "date"]).sort_values(["symbol", "date"]).reset_index(drop=True)
+            df_px.to_parquet(adj_dir / "prices.parquet", index=False)
+            print(f" -> Cập nhật thành công {len(new_stock_dfs)} mã cổ phiếu đến: {df_px['date'].max().date()}")
+
+    return df_px, df_idx
+
+
+def analyze_primary_market_trend(
+    current_idx: float,
+    v_sma20: float,
+    v_sma50: float,
+    v_sma100: float,
+    regime_active: bool
+) -> Dict[str, Any]:
+    """
+    Phân tích Xu Hướng Chủ Đạo của thị trường chung (Dominant / Primary Market Trend)
+    dựa trên hệ thống đa khung thời gian: SMA20 (ngắn hạn), SMA50 (trung hạn), SMA100 (dài hạn).
+    """
+    diff_sma20 = current_idx - v_sma20
+    diff_sma50 = current_idx - v_sma50
+    diff_sma100 = current_idx - v_sma100
+
+    pct_sma20 = (diff_sma20 / v_sma20 * 100) if v_sma20 > 0 else 0.0
+    pct_sma50 = (diff_sma50 / v_sma50 * 100) if v_sma50 > 0 else 0.0
+    pct_sma100 = (diff_sma100 / v_sma100 * 100) if v_sma100 > 0 else 0.0
+
+    # Phân loại xu hướng chủ đạo
+    if current_idx > v_sma20 and v_sma20 > v_sma50 and v_sma50 > v_sma100:
+        trend_status = "TĂNG TRƯỞNG MẠNH (UPTREND)"
+        trend_badge = "🟢 UPTREND MẠNH"
+        trend_color = "emerald"
+        trend_desc = "Cấu trúc tăng giá hoàn hảo (Index > SMA20 > SMA50 > SMA100). Dòng tiền duy trì vị thế dẫn dắt rất mạnh."
+        trend_advice = "Ưu tiên giải ngân theo đà tăng (Breakout & Pullback), gia tăng vị thế khi xuất hiện nhịp rung lắc kỹ thuật."
+    elif current_idx > v_sma50 and current_idx > v_sma100:
+        trend_status = "TĂNG GIÁ TRUNG HẠN"
+        trend_badge = "🟢 TĂNG GIÁ TRUNG HẠN"
+        trend_color = "emerald"
+        trend_desc = "VN-Index duy trì vững chắc trên SMA50 & SMA100. Xu hướng tăng chủ đạo trung hạn được bảo toàn."
+        trend_advice = "Cho phép mở vị thế mới có chọn lọc theo đúng tiêu chí định lượng V-DBO."
+    elif current_idx > v_sma100 and current_idx <= v_sma20:
+        trend_status = "ĐIỀU CHỈNH NGẮN HẠN (PULLBACK)"
+        trend_badge = "🟡 ĐIỀU CHỈNH NGẮN HẠN"
+        trend_color = "amber"
+        trend_desc = "VN-Index tạm thời suy yếu dưới SMA20 nhưng vẫn giữ được ngưỡng hỗ trợ trung - dài hạn SMA100."
+        trend_advice = "Thị trường rung lắc tái tích lũy. Hạn chế mua đuổi giá trần, kiên nhẫn chờ tín hiệu cân bằng tại hỗ trợ."
+    elif abs(diff_sma50) / v_sma50 < 0.015 and abs(diff_sma100) / v_sma100 < 0.02:
+        trend_status = "TÍCH LŨY / ĐI NGANG (SIDEWAYS)"
+        trend_badge = "⚪ TÍCH LŨY ĐI NGANG"
+        trend_color = "slate"
+        trend_desc = "VN-Index dao động biên độ hẹp quanh SMA50 & SMA100. Thị trường phân hóa cao giữa các nhóm ngành."
+        trend_advice = "Kiên nhẫn quan sát, chờ tín hiệu dòng tiền bứt phá rõ ràng trước khi nâng quy mô giải ngân."
+    else:
+        trend_status = "GIẢM GIÁ (DOWNTREND TRUNG HẠN)"
+        trend_badge = "🔴 DOWNTREND TRUNG HẠN"
+        trend_color = "rose"
+        trend_desc = "VN-Index nằm dưới cả SMA50 và SMA100. Xu hướng điều chỉnh giảm chủ đạo đang chiếm ưu thế trên thị trường."
+        trend_advice = "TẮT bộ lọc mua mới. Ưu tiên bảo toàn vốn, quản trị chặt trailing stop và hạ tỷ trọng danh mục."
+
+    return {
+        "status": trend_status,
+        "badge": trend_badge,
+        "color": trend_color,
+        "description": trend_desc,
+        "action_advice": trend_advice,
+        "sma20": round(v_sma20, 2),
+        "sma50": round(v_sma50, 2),
+        "sma100": round(v_sma100, 2),
+        "diff_sma20_pts": round(diff_sma20, 2),
+        "diff_sma50_pts": round(diff_sma50, 2),
+        "diff_sma100_pts": round(diff_sma100, 2),
+        "diff_sma20_pct": round(pct_sma20, 2),
+        "diff_sma50_pct": round(pct_sma50, 2),
+        "diff_sma100_pct": round(pct_sma100, 2),
+    }
+
+
 def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[str, Any]:
-    print("=== [WEB SYNC] ĐỒNG BỘ DỮ LIỆU TÍN HIỆU REALTIME CHO WEBSITE ===")
+    print("=== [WEB SYNC] ĐỒNG BỘ DỮ LIỆU TÍN HIỆU THỜI GIAN THỰC ĐẾN HIỆN TẠI ===")
     now = datetime.now()
     now_str = now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -71,12 +184,13 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     with open(ROOT / config_path, "r", encoding="utf-8") as f:
         full_cfg = yaml.safe_load(f)
 
-    # 2. Đọc dữ liệu lịch sử đã lưu
+    # 2. Đọc dữ liệu lịch sử và tự động cập nhật đến hiện tại
     adj_dir = ROOT / "data" / "adjusted"
     df_px = pd.read_parquet(adj_dir / "prices.parquet")
     df_idx = pd.read_parquet(adj_dir / "index.parquet")
+    df_px, df_idx = ensure_latest_market_data(df_px, df_idx)
 
-    # 3. Lấy cập nhật realtime phiên mới nhất cho VN-INDEX
+    # 3. Lấy cập nhật realtime nến 15 phút phiên hôm nay cho VN-INDEX
     latest_idx_bar = fetch_latest_intraday_price("VNINDEX", is_index=True)
     if latest_idx_bar:
         bar_date = pd.to_datetime(latest_idx_bar["timestamp"], unit="s", utc=True).tz_convert("Asia/Ho_Chi_Minh").tz_localize(None).normalize()
@@ -89,7 +203,7 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             }])
             df_idx = pd.concat([df_idx, new_idx_row], ignore_index=True)
         else:
-            # Cập nhật giá close trong phiên hôm nay
+            # Cập nhật giá close nến trong ngày hôm nay
             df_idx.loc[df_idx["date"] == bar_date, "close"] = latest_idx_bar["close"]
             df_idx.loc[df_idx["date"] == bar_date, "high"] = max(float(df_idx.loc[df_idx["date"] == bar_date, "high"].values[0]), latest_idx_bar["high"])
             df_idx.loc[df_idx["date"] == bar_date, "low"] = min(float(df_idx.loc[df_idx["date"] == bar_date, "low"].values[0]), latest_idx_bar["low"])
@@ -109,13 +223,27 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     # 5. Khởi tạo FeatureEngine
     F = FeatureEngine(W, idx_close)
 
-    # 6. Xác định Regime thị trường
+    # 6. Xác định Hệ Thống Xu Hướng & Regime Thị Trường
     m_regime = 100
-    idx_sma_series = F.idx.rolling(m_regime, min_periods=m_regime).mean()
-    idx_sma = idx_sma_series.iloc[t_idx]
-    current_idx_val = F.idx.iloc[t_idx]
-    regime_active = bool(current_idx_val > idx_sma) if not np.isnan(idx_sma) else True
-    regime_diff = current_idx_val - idx_sma if not np.isnan(idx_sma) else 0.0
+    sma20_series = F.idx.rolling(20, min_periods=20).mean()
+    sma50_series = F.idx.rolling(50, min_periods=50).mean()
+    sma100_series = F.idx.rolling(m_regime, min_periods=m_regime).mean()
+
+    current_idx_val = float(F.idx.iloc[t_idx])
+    v_sma20 = float(sma20_series.iloc[t_idx])
+    v_sma50 = float(sma50_series.iloc[t_idx])
+    v_sma100 = float(sma100_series.iloc[t_idx])
+
+    regime_active = bool(current_idx_val > v_sma100) if not np.isnan(v_sma100) else True
+    regime_diff = current_idx_val - v_sma100 if not np.isnan(v_sma100) else 0.0
+
+    primary_trend = analyze_primary_market_trend(
+        current_idx=current_idx_val,
+        v_sma20=v_sma20,
+        v_sma50=v_sma50,
+        v_sma100=v_sma100,
+        regime_active=regime_active,
+    )
 
     # 7. Đọc trạng thái sổ lệnh
     ledger = OrderLedger(init_cash=float(full_cfg["portfolio"]["init_cash"]))
@@ -192,7 +320,7 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     adtv_frac = float(full_cfg["universe"]["adtv_frac_cap"])
     lot = int(full_cfg["market"]["lot"])
 
-    # Lấy top candidates (tối đa 15 mã để hiển thị đầy đủ trên Web)
+    # Lấy top candidates (tối đa 15 mã để hiển thị trên Web)
     display_candidates = candidates[:max(15, free_slots * 2)]
     for rank, c in enumerate(display_candidates, 1):
         sym = F.symbols[c]
@@ -233,11 +361,13 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             "warning": warning,
         })
 
-    # 10. Tạo dữ liệu biểu đồ VN-Index (60 phiên gần nhất)
+    # 10. Tạo dữ liệu biểu đồ VN-Index đa khung thời gian (60 phiên gần nhất)
     chart_days = min(60, len(dates))
     chart_dates = [str(d.date()) for d in dates[-chart_days:]]
     chart_idx_c = [float(x) for x in F.idx.iloc[-chart_days:].values]
-    chart_idx_sma = [float(x) if not np.isnan(x) else None for x in idx_sma_series.iloc[-chart_days:].values]
+    chart_idx_sma20 = [float(x) if not np.isnan(x) else None for x in sma20_series.iloc[-chart_days:].values]
+    chart_idx_sma50 = [float(x) if not np.isnan(x) else None for x in sma50_series.iloc[-chart_days:].values]
+    chart_idx_sma100 = [float(x) if not np.isnan(x) else None for x in sma100_series.iloc[-chart_days:].values]
 
     # Đóng gói dữ liệu tổng thể
     payload = {
@@ -248,10 +378,11 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             "active": regime_active,
             "badge": "BẬT (MUA MỚI)" if regime_active else "TẮT (NGỪNG MUA)",
             "index_value": current_idx_val,
-            "sma_value": idx_sma,
+            "sma_value": v_sma100,
             "diff_pts": regime_diff,
-            "diff_pct": (regime_diff / idx_sma * 100) if not np.isnan(idx_sma) and idx_sma > 0 else 0.0,
-            "text": f"VN-Index {'nằm trên' if regime_active else 'nằm dưới'} đường SMA100 (+{regime_diff:,.1f} điểm)",
+            "diff_pct": (regime_diff / v_sma100 * 100) if not np.isnan(v_sma100) and v_sma100 > 0 else 0.0,
+            "text": f"VN-Index {'nằm trên' if regime_active else 'nằm dưới'} đường SMA100 ({regime_diff:+,.1f} điểm)",
+            "primary_trend": primary_trend,
         },
         "portfolio": {
             "total_equity": eq,
@@ -272,7 +403,9 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
         "chart": {
             "labels": chart_dates,
             "index_close": chart_idx_c,
-            "sma100": chart_idx_sma,
+            "sma20": chart_idx_sma20,
+            "sma50": chart_idx_sma50,
+            "sma100": chart_idx_sma100,
         },
     }
 
@@ -286,7 +419,10 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
     print(f" -> Đã xuất dữ liệu JSON: {json_path}")
-    print(f" -> Tín hiệu Mua mới: {len(entries)} mã (Được đề xuất vào lệnh: {min(len(entries), free_slots)})")
+    print(f" -> Phiên thị trường: {analysis_date_str}")
+    print(f" -> Xu Hướng Chủ Đạo: {primary_trend['badge']} ({primary_trend['status']})")
+    print(f" -> Bộ lọc Regime: {'🟢 BẬT' if regime_active else '🔴 TẮT'} ({payload['regime']['text']})")
+    print(f" -> Tín hiệu Mua mới: {len(entries)} mã (Được đề xuất vào lệnh: {min(len(entries), free_slots) if regime_active else 0})")
     print(f" -> Tín hiệu Thoát / Trailing: {len(exits)} vị thế")
 
     # Xuất bản alert telegram nếu có thay đổi quan trọng
@@ -294,8 +430,8 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
         publish_daily_alert(
             date_str=analysis_date_str,
             regime_active=regime_active,
-            regime_detail=payload["regime"]["text"],
-            entries=entries[:free_slots],
+            regime_detail=f"{primary_trend['badge']} — {primary_trend['description']}",
+            entries=entries[:free_slots] if regime_active else [],
             exits=exits,
             portfolio_status=portfolio_status,
         )
