@@ -1,7 +1,7 @@
 {
   "sync_time": "2026-10-23 04:18:52",
   "market_date": "2026-10-22",
-  "next_sync_seconds": 900,
+  "next_sync_seconds": 300,
   "regime": {
     "active": false,
     "badge": "TẮT (NGỪNG MUA)",

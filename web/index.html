@@ -69,7 +69,7 @@
       <div class="flex items-center space-x-4">
         <div class="hidden sm:flex items-center space-x-2 text-xs text-slate-400 bg-dark-bg px-3 py-1.5 rounded-lg border border-dark-border">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Đồng bộ sau: <strong id="countdown-text" class="mono text-white">15:00</strong></span>
+          <span>Đồng bộ sau: <strong id="countdown-text" class="mono text-white">05:00</strong></span>
         </div>
         <button id="btn-refresh" onclick="fetchSignalsData(true)" class="flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="refresh-icon"></i>
@@ -171,7 +171,7 @@
           <p class="text-xs text-slate-400 mt-1">Khớp lệnh ATO 09:15 sáng hôm sau</p>
         </div>
         <div class="mt-3 pt-2 border-t border-dark-border/60 text-[11px] text-slate-400">
-          Cập nhật realtime 15 phút/lần tự động.
+          Cập nhật realtime 5 phút/lần tự động.
         </div>
       </div>
 
@@ -401,7 +401,7 @@
   <!-- FOOTER -->
   <footer class="border-t border-dark-border bg-dark-card/50 py-4 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 space-y-2 sm:space-y-0">
-      <p>© 2026 V-DBO Quant System. Giám sát tự động 15 phút/lần qua GitHub Actions & Entrade API.</p>
+      <p>© 2026 V-DBO Quant System. Giám sát tự động 5 phút/lần qua GitHub Actions & Entrade API.</p>
       <div class="flex items-center space-x-4">
         <span>T+2.5 Settlement</span>
         <span>•</span>
@@ -417,7 +417,7 @@
     window.__FALLBACK_DATA__ = {
       "sync_time": "2026-10-12 16:04:17",
       "market_date": "2026-10-12",
-      "next_sync_seconds": 900,
+      "next_sync_seconds": 300,
       "regime": {
         "active": false,
         "badge": "TẮT (NGỪNG MUA)",
@@ -472,7 +472,7 @@
   <script>
     let currentData = window.__FALLBACK_DATA__;
     let chartInstance = null;
-    let countdownSeconds = 900; // 15 phút
+    let countdownSeconds = 300; // 5 phút
     let currentHistoryFilter = 'ALL';
 
     async function fetchSignalsData(isManual = false) {
@@ -483,7 +483,7 @@
         const res = await fetch('data/signals.json?t=' + new Date().getTime());
         if (res.ok) {
           currentData = await res.json();
-          countdownSeconds = 900;
+          countdownSeconds = currentData.next_sync_seconds || 300;
         }
       } catch (e) {
         console.warn('Dùng dữ liệu nhúng sẵn do không thể tải data/signals.json:', e);
@@ -897,11 +897,11 @@
       alert('Đã sao chép lệnh vào clipboard:\n' + text);
     }
 
-    // Countdown Timer 15 phút
+    // Countdown Timer 5 phút
     setInterval(() => {
       countdownSeconds--;
       if (countdownSeconds <= 0) {
-        countdownSeconds = 900;
+        countdownSeconds = currentData.next_sync_seconds || 300;
         fetchSignalsData();
       }
       const m = Math.floor(countdownSeconds / 60);

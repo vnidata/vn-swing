@@ -40,11 +40,11 @@ HEADERS = {
 
 
 def fetch_latest_intraday_price(symbol: str, is_index: bool = False) -> Optional[Dict[str, Any]]:
-    """Lấy thanh nến 15 phút hoặc nến ngày gần nhất từ DNSE Entrade."""
+    """Lấy thanh nến 1-5 phút hoặc nến ngày gần nhất từ DNSE Entrade."""
     endpoint = "index" if is_index else "stock"
     now_ts = int(time.time())
     start_ts = int((datetime.now() - timedelta(days=5)).timestamp())
-    url = f"https://services.entrade.com.vn/chart-api/v2/ohlcs/{endpoint}?from={start_ts}&to={now_ts}&symbol={symbol}&resolution=15"
+    url = f"https://services.entrade.com.vn/chart-api/v2/ohlcs/{endpoint}?from={start_ts}&to={now_ts}&symbol={symbol}&resolution=1"
 
     try:
         r = requests.get(url, headers=HEADERS, verify=False, timeout=8)
@@ -373,7 +373,7 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     payload = {
         "sync_time": now_str,
         "market_date": analysis_date_str,
-        "next_sync_seconds": 900,  # 15 phút
+        "next_sync_seconds": 300,  # 5 phút
         "regime": {
             "active": regime_active,
             "badge": "BẬT (MUA MỚI)" if regime_active else "TẮT (NGỪNG MUA)",

@@ -1,10 +1,10 @@
-name: Deploy Dashboard & Realtime 15M Sync
+name: Deploy Dashboard & Realtime 5M Sync
 
 on:
-  # Chạy định kỳ 15 phút một lần trong giờ giao dịch HOSE (09:00 - 15:00 giờ Việt Nam, Thứ 2 - Thứ 6)
+  # Chạy định kỳ 5 phút một lần trong giờ giao dịch HOSE (09:00 - 15:00 giờ Việt Nam, Thứ 2 - Thứ 6)
   # 02:00 - 08:00 UTC = 09:00 - 15:00 UTC+7
   schedule:
-    - cron: '*/15 2-8 * * 1-5'
+    - cron: '*/5 2-8 * * 1-5'
 
   # Cho phép kích hoạt thủ công bất kỳ lúc nào từ GitHub UI
   workflow_dispatch:
@@ -48,7 +48,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Web Realtime Sync (15M Data & Signal Generator)
+      - name: Run Web Realtime Sync (5M Data & Signal Generator)
         env:
           PYTHONPATH: src
           PYTHONIOENCODING: utf-8

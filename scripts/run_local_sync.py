@@ -1,9 +1,9 @@
 """
-Script chạy đồng bộ dữ liệu Realtime 15 phút/lần tại máy cục bộ (Local Daemon).
+Script chạy đồng bộ dữ liệu Realtime 5 phút/lần tại máy cục bộ (Local Daemon).
 Tự động gọi web_sync.py định kỳ và có thể bật HTTP Server để xem trực tiếp trên trình duyệt.
 Cách dùng:
     python scripts/run_local_sync.py
-    python scripts/run_local_sync.py --interval 300   # 5 phút/lần
+    python scripts/run_local_sync.py --interval 60    # 1 phút/lần
     python scripts/run_local_sync.py --serve          # Kèm HTTP Server port 8080
 """
 import argparse
@@ -42,8 +42,8 @@ def start_http_server(port: int = 8080, web_dir: Path = ROOT / "web"):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="VN-Swing Realtime 15M Sync Daemon")
-    parser.add_argument("--interval", type=int, default=900, help="Chu kỳ đồng bộ (giây), mặc định 900s (15 phút)")
+    parser = argparse.ArgumentParser(description="VN-Swing Realtime 5M Sync Daemon")
+    parser.add_argument("--interval", type=int, default=300, help="Chu kỳ đồng bộ (giây), mặc định 300s (5 phút)")
     parser.add_argument("--serve", action="store_true", help="Khởi động kèm máy chủ Web tại http://localhost:8080")
     parser.add_argument("--port", type=int, default=8080, help="Cổng máy chủ Web (mặc định 8080)")
     args = parser.parse_args()
