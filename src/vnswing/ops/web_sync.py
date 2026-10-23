@@ -5,7 +5,7 @@ Tự động cập nhật dữ liệu đến phiên hiện tại và phân tích
 Xuất dữ liệu ra web/data/signals.json.
 """
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -177,8 +177,10 @@ def analyze_primary_market_trend(
 
 def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[str, Any]:
     print("=== [WEB SYNC] ĐỒNG BỘ DỮ LIỆU TÍN HIỆU THỜI GIAN THỰC ĐẾN HIỆN TẠI ===")
-    now = datetime.now()
-    now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    tz_vn = timezone(timedelta(hours=7))
+    now_vn = datetime.now(tz_vn)
+    now_str = now_vn.strftime("%Y-%m-%d %H:%M:%S")
+    today_vn = now_vn.date()
 
     # 1. Đọc config
     with open(ROOT / config_path, "r", encoding="utf-8") as f:
@@ -191,6 +193,8 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     df_px, df_idx = ensure_latest_market_data(df_px, df_idx)
 
     # 3. Lấy cập nhật realtime nến 15 phút phiên hôm nay cho VN-INDEX
+    is_intraday = False
+    bar_date = None
     latest_idx_bar = fetch_latest_intraday_price("VNINDEX", is_index=True)
     if latest_idx_bar:
         bar_date = pd.to_datetime(latest_idx_bar["timestamp"], unit="s", utc=True).tz_convert("Asia/Ho_Chi_Minh").tz_localize(None).normalize()
@@ -207,12 +211,23 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             df_idx.loc[df_idx["date"] == bar_date, "close"] = latest_idx_bar["close"]
             df_idx.loc[df_idx["date"] == bar_date, "high"] = max(float(df_idx.loc[df_idx["date"] == bar_date, "high"].values[0]), latest_idx_bar["high"])
             df_idx.loc[df_idx["date"] == bar_date, "low"] = min(float(df_idx.loc[df_idx["date"] == bar_date, "low"].values[0]), latest_idx_bar["low"])
+            df_idx.loc[df_idx["date"] == bar_date, "volume"] = latest_idx_bar["volume"]
+
+        if bar_date and bar_date.date() == today_vn:
+            is_intraday = True
 
     # 4. Format dữ liệu dạng wide
     W = {
         c: df_px.pivot(index="date", columns="symbol", values=c).sort_index()
         for c in ["open", "high", "low", "close", "volume"]
     }
+    # Nếu có nến realtime ngày hôm nay bar_date vượt qua ngày chốt nến ngày của cổ phiếu
+    if bar_date and bar_date > W["close"].index.max():
+        for col in ["open", "high", "low", "close", "volume"]:
+            last_row = W[col].iloc[-1:].copy()
+            last_row.index = [bar_date]
+            W[col] = pd.concat([W[col], last_row])
+
     df_idx["date"] = pd.to_datetime(df_idx["date"])
     idx_close = df_idx.set_index("date")["close"].sort_index().reindex(W["close"].index).ffill()
 
@@ -230,6 +245,9 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
     sma100_series = F.idx.rolling(m_regime, min_periods=m_regime).mean()
 
     current_idx_val = float(F.idx.iloc[t_idx])
+    prev_idx_val = float(F.idx.iloc[t_idx - 1]) if t_idx > 0 else current_idx_val
+    diff_vs_prev = current_idx_val - prev_idx_val
+    pct_vs_prev = (diff_vs_prev / prev_idx_val * 100) if prev_idx_val > 0 else 0.0
     v_sma20 = float(sma20_series.iloc[t_idx])
     v_sma50 = float(sma50_series.iloc[t_idx])
     v_sma100 = float(sma100_series.iloc[t_idx])
@@ -378,6 +396,10 @@ def generate_web_dashboard_data(config_path: str = "configs/base.yaml") -> Dict[
             "active": regime_active,
             "badge": "BẬT (MUA MỚI)" if regime_active else "TẮT (NGỪNG MUA)",
             "index_value": current_idx_val,
+            "prev_index_value": prev_idx_val,
+            "diff_vs_prev_pts": round(diff_vs_prev, 2),
+            "pct_vs_prev": round(pct_vs_prev, 2),
+            "is_intraday": is_intraday,
             "sma_value": v_sma100,
             "diff_pts": regime_diff,
             "diff_pct": (regime_diff / v_sma100 * 100) if not np.isnan(v_sma100) and v_sma100 > 0 else 0.0,

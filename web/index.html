@@ -69,7 +69,9 @@
       <div class="flex items-center space-x-4">
         <div class="hidden sm:flex items-center space-x-2 text-xs text-slate-400 bg-dark-bg px-3 py-1.5 rounded-lg border border-dark-border">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Đồng bộ sau: <strong id="countdown-text" class="mono text-white">05:00</strong></span>
+          <span>Cập nhật: <strong id="header-sync-time" class="mono text-white">--:--:--</strong></span>
+          <span class="text-slate-600">|</span>
+          <span>Đếm lùi: <strong id="countdown-text" class="mono text-emerald-400">05:00</strong></span>
         </div>
         <button id="btn-refresh" onclick="fetchSignalsData(true)" class="flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="refresh-icon"></i>
@@ -93,8 +95,8 @@
             <span id="badge-regime" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 DỪNG MUA</span>
           </div>
           <div class="mt-2 flex items-baseline space-x-2">
-            <span id="kpi-vnindex" class="text-2xl font-bold mono text-white">1,720.98</span>
-            <span class="text-xs text-slate-400">VN-Index</span>
+            <span id="kpi-vnindex" class="text-2xl font-bold mono text-white">--</span>
+            <span id="kpi-vnindex-change" class="text-xs font-semibold mono text-slate-400">--</span>
           </div>
           
           <!-- TRẠNG THÁI XU HƯỚNG CHỦ ĐẠO -->
@@ -494,9 +496,23 @@
     }
 
     function renderDashboard() {
+      // Cập nhật Header Sync Time
+      const headerSyncEl = document.getElementById('header-sync-time');
+      if (headerSyncEl && currentData.sync_time) {
+        const parts = currentData.sync_time.split(' ');
+        headerSyncEl.innerText = parts[1] ? parts[1] : currentData.sync_time;
+      }
+
       // 1. KPI cards
-      const r = currentData.regime;
-      document.getElementById('kpi-vnindex').innerText = r.index_value ? r.index_value.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '--';
+      const r = currentData.regime || {};
+      document.getElementById('kpi-vnindex').innerText = r.index_value ? r.index_value.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '--';
+
+      const changeEl = document.getElementById('kpi-vnindex-change');
+      if (changeEl && r.diff_vs_prev_pts !== undefined) {
+        const sign = r.diff_vs_prev_pts >= 0 ? '+' : '';
+        changeEl.innerText = `${sign}${r.diff_vs_prev_pts.toFixed(2)} (${sign}${r.pct_vs_prev.toFixed(2)}%)`;
+        changeEl.className = `text-xs font-semibold mono ${r.diff_vs_prev_pts >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
       
       const badgeReg = document.getElementById('badge-regime');
       if (r.active) {
@@ -573,7 +589,8 @@
       const k = currentData.kill_switch;
       document.getElementById('badge-killswitch').innerText = k.status;
 
-      document.getElementById('kpi-sync-date').innerText = currentData.market_date || currentData.sync_time;
+      const isIntra = r.is_intraday;
+      document.getElementById('kpi-sync-date').innerHTML = `${currentData.market_date || ''} ${isIntra ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">REALTIME</span>' : ''}`;
       document.getElementById('kpi-entry-count').innerText = (currentData.entries || []).length;
       document.getElementById('kpi-exit-count').innerText = (currentData.exits || []).length;
       document.getElementById('tab-entry-count').innerText = (currentData.entries || []).length;
